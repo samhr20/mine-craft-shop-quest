@@ -61,12 +61,28 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				minecraft: {
+					grass: 'hsl(var(--minecraft-grass))',
+					dirt: 'hsl(var(--minecraft-dirt))',
+					stone: 'hsl(var(--minecraft-stone))',
+					diamond: 'hsl(var(--minecraft-diamond))',
+					gold: 'hsl(var(--minecraft-gold))',
+					redstone: 'hsl(var(--minecraft-redstone))'
 				}
+			},
+			fontFamily: {
+				'minecraft': ['monospace'],
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
 				sm: 'calc(var(--radius) - 4px)'
+			},
+			boxShadow: {
+				'block': 'var(--block-shadow)',
+				'block-hover': 'var(--block-shadow-hover)',
+				'block-pressed': 'var(--block-shadow-pressed)',
 			},
 			keyframes: {
 				'accordion-down': {
@@ -84,11 +100,21 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'block-bounce': {
+					'0%, 100%': { transform: 'translateY(0)' },
+					'50%': { transform: 'translateY(-4px)' }
+				},
+				'pixelate': {
+					'0%': { transform: 'scale(1)' },
+					'100%': { transform: 'scale(1.05)' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'block-bounce': 'block-bounce 0.5s ease-in-out',
+				'pixelate': 'pixelate 0.2s ease-in-out'
 			}
 		}
 	},
