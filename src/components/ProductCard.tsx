@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ShoppingCart, Star } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface ProductCardProps {
   id: string;
@@ -22,6 +23,7 @@ const rarityColors = {
 };
 
 const ProductCard = ({ 
+  id,
   name, 
   price, 
   originalPrice, 
@@ -32,23 +34,25 @@ const ProductCard = ({
   isNew 
 }: ProductCardProps) => {
   return (
-    <div className="bg-card border-2 border-border block-shadow hover:shadow-block-hover transition-all duration-200 p-4 group">
+    <div className="bg-card border-2 border-border block-shadow hover:shadow-block-hover transition-all duration-200 p-4 group card-hover">
       {/* Image Container */}
-      <div className="relative mb-4 bg-muted/20 p-4 aspect-square flex items-center justify-center overflow-hidden">
-        <img 
-          src={image} 
-          alt={name}
-          className="pixelated max-w-full max-h-full object-contain group-hover:scale-110 transition-transform duration-200"
-        />
-        {isNew && (
-          <Badge className="absolute top-2 left-2 bg-minecraft-redstone text-primary-foreground">
-            NEW
+      <Link to={`/product/${id}`} className="block">
+        <div className="relative mb-4 bg-muted/20 p-4 aspect-square flex items-center justify-center overflow-hidden">
+          <img 
+            src={image} 
+            alt={name}
+            className="pixelated max-w-full max-h-full object-contain group-hover:scale-110 transition-transform duration-200"
+          />
+          {isNew && (
+            <Badge className="absolute top-2 left-2 bg-minecraft-redstone text-primary-foreground pulse-slow">
+              NEW
+            </Badge>
+          )}
+          <Badge className={`absolute top-2 right-2 ${rarityColors[rarity]} capitalize glow`}>
+            {rarity}
           </Badge>
-        )}
-        <Badge className={`absolute top-2 right-2 ${rarityColors[rarity]} capitalize`}>
-          {rarity}
-        </Badge>
-      </div>
+        </div>
+      </Link>
 
       {/* Content */}
       <div className="space-y-3">
@@ -56,9 +60,11 @@ const ProductCard = ({
           <p className="text-sm text-muted-foreground font-minecraft uppercase tracking-wide">
             {category}
           </p>
-          <h3 className="font-bold text-lg font-minecraft line-clamp-2">
-            {name}
-          </h3>
+          <Link to={`/product/${id}`}>
+            <h3 className="font-bold text-lg font-minecraft line-clamp-2 hover:text-minecraft-grass transition-colors cursor-pointer">
+              {name}
+            </h3>
+          </Link>
         </div>
 
         {/* Rating */}
