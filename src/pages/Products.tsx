@@ -1,107 +1,142 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Filter, Grid, List } from "lucide-react";
-import diamondSword from "@/assets/diamond-sword.png";
-import goldenPickaxe from "@/assets/golden-pickaxe.png";
-import creeperPlush from "@/assets/creeper-plush.jpg";
+import { useProducts, useCategories } from "@/hooks/use-supabase";
+import LoadingSpinner from "@/components/LoadingSpinner";
+import { usePageSEO } from "@/hooks/useSEO";
+import { getProductImage } from "@/lib/image-utils";
 
 const Products = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  
+  // Set SEO for products page
+  usePageSEO('products');
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [sortBy, setSortBy] = useState("name");
 
-  const allProducts = [
-    {
-      id: "1",
-      name: "Diamond Sword",
-      price: 29.99,
-      originalPrice: 39.99,
-      image: diamondSword,
-      category: "Weapons",
-      rating: 4.8,
-      rarity: "legendary" as const,
-      isNew: true,
-    },
-    {
-      id: "2", 
-      name: "Golden Pickaxe",
-      price: 24.99,
-      image: goldenPickaxe,
-      category: "Tools",
-      rating: 4.6,
-      rarity: "epic" as const,
-    },
-    {
-      id: "3",
-      name: "Creeper Plush Toy",
-      price: 19.99,
-      originalPrice: 24.99,
-      image: creeperPlush,
-      category: "Merchandise",
-      rating: 4.9,
-      rarity: "rare" as const,
-    },
-    {
-      id: "4",
-      name: "Enchanted Bow",
-      price: 34.99,
-      image: diamondSword,
-      category: "Weapons",
-      rating: 4.7,
-      rarity: "legendary" as const,
-    },
-    {
-      id: "5",
-      name: "Redstone Block Set",
-      price: 15.99,
-      image: goldenPickaxe,
-      category: "Blocks",
-      rating: 4.4,
-      rarity: "common" as const,
-    },
-    {
-      id: "6",
-      name: "Minecraft Hoodie",
-      price: 49.99,
-      originalPrice: 59.99,
-      image: creeperPlush,
-      category: "Merchandise",
-      rating: 4.5,
-      rarity: "rare" as const,
-      isNew: true,
-    },
-    {
-      id: "7",
-      name: "Iron Armor Set",
-      price: 44.99,
-      image: diamondSword,
-      category: "Armor",
-      rating: 4.3,
-      rarity: "epic" as const,
-    },
-    {
-      id: "8",
-      name: "TNT Block",
-      price: 12.99,
-      image: goldenPickaxe,
-      category: "Blocks",
-      rating: 4.2,
-      rarity: "common" as const,
-    },
-  ];
+  // Get category and search from URL query parameters
+  useEffect(() => {
+    const categoryFromUrl = searchParams.get('category');
+    const searchFromUrl = searchParams.get('search');
+    
+    if (categoryFromUrl) {
+      setSelectedCategory(categoryFromUrl);
+    }
+    
+    if (searchFromUrl) {
+      setSearchTerm(searchFromUrl);
+    }
+  }, [searchParams]);
 
-  const categories = ["all", "Weapons", "Tools", "Blocks", "Merchandise", "Armor"];
+  const { products, loading: productsLoading, error: productsError } = useProducts();
+  const { categories, loading: categoriesLoading, error: categoriesError } = useCategories();
 
-  const filteredProducts = allProducts.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  // Transform Supabase data to match ProductCard props
+  const transformedProducts = useMemo(() => {
+    return products.map((product, index) => ({
+      id: product.id,
+      name: product.name,
+      description: product.description,
+      price: product.price,
+      originalPrice: undefined, // No original price in database
+      image: getProductImage(product.image_url, product.name),
+      category: product.category,
+      rating: 4.5 + (index * 0.1), // Generate rating based on index
+      rarity: (product.rarity as "common" | "rare" | "epic" | "legendary") || (() => {
+        // Fallback: Assign rarity based on price if not set in database
+        if (product.price >= 250) return "legendary" as const;
+        if (product.price >= 150) return "epic" as const;
+        if (product.price >= 50) return "rare" as const;
+        return "common" as const;
+      })(),
+      isNew: index === 0, // Mark first product as new
+    }));
+  }, [products]);
+
+  // Get unique categories from products
+  const availableCategories = useMemo(() => {
+    const uniqueCategories = [...new Set(products.map(p => p.category))];
+    return ["all", ...uniqueCategories];
+  }, [products]);
+
+  // Filter and sort products
+  const filteredProducts = useMemo(() => {
+    let filtered = transformedProducts.filter(product => {
+      const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           product.description?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
+
+    // Sort products
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case "price":
+          return a.price - b.price;
+        case "rating":
+          return b.rating - a.rating;
+        case "name":
+        default:
+          return a.name.localeCompare(b.name);
+      }
+    });
+
+    return filtered;
+  }, [transformedProducts, searchTerm, selectedCategory, sortBy]);
+
+  // Loading state
+  if (productsLoading || categoriesLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <section className="bg-grass-gradient py-16">
+          <div className="container mx-auto px-4">
+            <div className="text-center">
+              <h1 className="text-5xl font-bold text-primary-foreground mb-4 font-minecraft">
+                All Products
+              </h1>
+              <p className="text-xl text-primary-foreground/90 font-minecraft">
+                Loading amazing items for your Minecraft adventure...
+              </p>
+            </div>
+          </div>
+        </section>
+        <div className="flex justify-center py-16">
+          <LoadingSpinner />
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Error state
+  if (productsError || categoriesError) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <section className="bg-grass-gradient py-16">
+          <div className="container mx-auto px-4">
+            <div className="text-center">
+              <h1 className="text-5xl font-bold text-primary-foreground mb-4 font-minecraft">
+                All Products
+              </h1>
+              <p className="text-xl text-primary-foreground/90 font-minecraft">
+                Error loading products: {productsError || categoriesError}
+              </p>
+            </div>
+          </div>
+        </section>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -145,14 +180,22 @@ const Products = () => {
 
             {/* Category Filter */}
             <div className="flex gap-2 flex-wrap">
-              {categories.map((category) => (
+              {availableCategories.map((category) => (
                 <Button
                   key={category}
                   variant={selectedCategory === category ? "grass" : "outline"}
                   size="sm"
-                  onClick={() => setSelectedCategory(category)}
+                  onClick={() => {
+                    setSelectedCategory(category);
+                    // Update URL with category filter
+                    if (category === "all") {
+                      setSearchParams({});
+                    } else {
+                      setSearchParams({ category });
+                    }
+                  }}
                   className="animate-scale-in"
-                  style={{ animationDelay: `${categories.indexOf(category) * 0.1}s` }}
+                  style={{ animationDelay: `${availableCategories.indexOf(category) * 0.1}s` }}
                 >
                   {category === "all" ? "All" : category}
                 </Button>

@@ -5,8 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { MapPin, Phone, Mail, Clock, Send, MessageSquare } from "lucide-react";
+import { usePageSEO } from "@/hooks/useSEO";
 
 const Contact = () => {
+  // Set SEO for contact page
+  usePageSEO('contact');
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -16,7 +19,6 @@ const Contact = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
     // Handle form submission
   };
 

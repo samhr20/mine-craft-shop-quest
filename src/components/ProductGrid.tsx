@@ -1,70 +1,78 @@
 import ProductCard from "./ProductCard";
-import diamondSword from "@/assets/diamond-sword.png";
-import goldenPickaxe from "@/assets/golden-pickaxe.png";
-import creeperPlush from "@/assets/creeper-plush.jpg";
+import { useProducts } from "@/hooks/use-supabase";
+import LoadingSpinner from "./LoadingSpinner";
+import { getProductImage } from "@/lib/image-utils";
+import { useNavigate } from "react-router-dom";
 
 const ProductGrid = () => {
-  const products = [
-    {
-      id: "1",
-      name: "Diamond Sword",
-      price: 29.99,
-      originalPrice: 39.99,
-      image: diamondSword,
-      category: "Weapons",
-      rating: 4.8,
-      rarity: "legendary" as const,
-      isNew: true,
-    },
-    {
-      id: "2", 
-      name: "Golden Pickaxe",
-      price: 24.99,
-      image: goldenPickaxe,
-      category: "Tools",
-      rating: 4.6,
-      rarity: "epic" as const,
-    },
-    {
-      id: "3",
-      name: "Creeper Plush Toy",
-      price: 19.99,
-      originalPrice: 24.99,
-      image: creeperPlush,
-      category: "Merchandise",
-      rating: 4.9,
-      rarity: "rare" as const,
-    },
-    {
-      id: "4",
-      name: "Enchanted Bow",
-      price: 34.99,
-      image: diamondSword, // placeholder
-      category: "Weapons",
-      rating: 4.7,
-      rarity: "legendary" as const,
-    },
-    {
-      id: "5",
-      name: "Redstone Block Set",
-      price: 15.99,
-      image: goldenPickaxe, // placeholder
-      category: "Blocks",
-      rating: 4.4,
-      rarity: "common" as const,
-    },
-    {
-      id: "6",
-      name: "Minecraft Hoodie",
-      price: 49.99,
-      originalPrice: 59.99,
-      image: creeperPlush, // placeholder
-      category: "Merchandise",
-      rating: 4.5,
-      rarity: "rare" as const,
-      isNew: true,
-    },
-  ];
+  const { products, loading, error } = useProducts();
+  const navigate = useNavigate();
+
+  const handleViewAllProducts = () => {
+    navigate('/products');
+  };
+
+  // Filter and transform only featured products
+  const featuredProducts = products.filter(product => product.is_featured === true);
+  
+  // Transform Supabase data to match ProductCard props (limit to 6 featured products)
+  const transformedProducts = featuredProducts
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()) // Sort by newest first
+    .slice(0, 6) // Limit to 6 featured products
+    .map((product, index) => ({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      originalPrice: undefined, // No original price in database
+      image: getProductImage(product.image_url, product.name),
+      category: product.category,
+      rating: 4.5 + (index * 0.1), // Generate rating based on index
+      rarity: (product.rarity as "common" | "rare" | "epic" | "legendary") || (() => {
+        // Fallback: Assign rarity based on price if not set in database
+        if (product.price >= 250) return "legendary" as const;
+        if (product.price >= 150) return "epic" as const;
+        if (product.price >= 50) return "rare" as const;
+        return "common" as const;
+      })(),
+      isNew: index === 0, // Mark first product as new
+    }));
+
+  if (loading) {
+    return (
+      <section className="py-16 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold text-foreground mb-4 font-minecraft">
+              Featured Products
+            </h2>
+            <p className="text-xl text-muted-foreground font-minecraft">
+              Loading amazing items for your Minecraft adventure...
+            </p>
+          </div>
+          <div className="flex justify-center">
+            <LoadingSpinner />
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section className="py-16 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold text-foreground mb-4 font-minecraft">
+              Featured Products
+            </h2>
+            <p className="text-xl text-muted-foreground font-minecraft">
+              Error loading products: {error}
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="py-16 bg-background">
@@ -78,17 +86,30 @@ const ProductGrid = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {products.map((product) => (
-            <ProductCard key={product.id} {...product} />
-          ))}
-        </div>
+        {transformedProducts.length > 0 ? (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {transformedProducts.map((product) => (
+                <ProductCard key={product.id} {...product} />
+              ))}
+            </div>
 
-        <div className="text-center mt-12">
-          <button className="bg-grass-gradient text-primary-foreground px-8 py-3 block-shadow hover:shadow-block-hover transition-all font-minecraft font-bold">
-            View All Products
-          </button>
-        </div>
+            <div className="text-center mt-12">
+              <button 
+                className="bg-grass-gradient text-primary-foreground px-8 py-3 block-shadow hover:shadow-block-hover transition-all font-minecraft font-bold hover:scale-105 transform"
+                onClick={handleViewAllProducts}
+              >
+                View All Products
+              </button>
+            </div>
+          </>
+        ) : (
+          <div className="text-center">
+            <p className="text-xl text-muted-foreground font-minecraft">
+              No products found. Check back soon for new items!
+            </p>
+          </div>
+        )}
       </div>
     </section>
   );

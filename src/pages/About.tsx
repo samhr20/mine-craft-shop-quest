@@ -3,8 +3,11 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Shield, Truck, Clock, Users, Star, Heart } from "lucide-react";
 import { Link } from "react-router-dom";
+import { usePageSEO } from "@/hooks/useSEO";
 
 const About = () => {
+  // Set SEO for about page
+  usePageSEO('about');
   const features = [
     {
       icon: <Shield className="w-8 h-8" />,
