@@ -14,7 +14,7 @@ interface CartItem {
 
 interface CartContextType {
   items: CartItem[];
-  addItem: (item: Omit<CartItem, 'id' | 'product_id' | 'quantity'>) => Promise<void>;
+  addItem: (item: Omit<CartItem, 'id' | 'product_id' | 'quantity'>, quantity?: number) => Promise<void>;
   removeItem: (productId: string) => Promise<void>;
   updateQuantity: (productId: string, quantity: number) => Promise<void>;
   clearCart: () => Promise<void>;
@@ -117,7 +117,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     }
   };
 
-  const addItem = async (item: Omit<CartItem, 'id' | 'product_id' | 'quantity'>) => {
+  const addItem = async (item: Omit<CartItem, 'id' | 'product_id' | 'quantity'>, quantity: number = 1) => {
     if (!user) {
       setShowLoginPopup(true);
       return;
@@ -141,16 +141,16 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       const existingItem = items.find(i => i.product_id === productData.id);
       
       if (existingItem) {
-        // Update quantity if item exists
-        await updateQuantity(productData.id, existingItem.quantity + 1);
+        // Update quantity if item exists - add the new quantity to existing quantity
+        await updateQuantity(productData.id, existingItem.quantity + quantity);
       } else {
-        // Insert new cart item
+        // Insert new cart item with the specified quantity
         const { error } = await supabase
           .from('cart_items')
           .insert({
             user_id: user.id,
             product_id: productData.id,
-            quantity: 1,
+            quantity: quantity,
           });
 
         if (error) {

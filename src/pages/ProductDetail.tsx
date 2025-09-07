@@ -18,6 +18,8 @@ const ProductDetail = () => {
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [showAddedMessage, setShowAddedMessage] = useState(false);
+  const [showShareOptions, setShowShareOptions] = useState(false);
 
   const { products, loading, error } = useProducts();
   const { addItem } = useCart();
@@ -46,13 +48,21 @@ const ProductDetail = () => {
     }
   }, [loading, product, id, navigate]);
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (product) {
-      addItem({
-        name: product.name,
-        price: product.price,
-        image: getProductImage(product.image_url, product.name),
-      });
+      try {
+        await addItem({
+          name: product.name,
+          price: product.price,
+          image: getProductImage(product.image_url, product.name),
+        }, quantity);
+        
+        // Show success message
+        setShowAddedMessage(true);
+        setTimeout(() => setShowAddedMessage(false), 3000);
+      } catch (error) {
+        console.error('Error adding to cart:', error);
+      }
     }
   };
 
@@ -70,6 +80,84 @@ const ProductDetail = () => {
         });
       }
     }
+  };
+
+  const handleShare = async () => {
+    if (!product) return;
+
+    const shareData = {
+      title: product.name,
+      text: `Check out this amazing ${product.name} for ₹${product.price}!`,
+      url: window.location.href,
+    };
+
+    // Check if Web Share API is supported
+    if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+      try {
+        await navigator.share(shareData);
+      } catch (error) {
+        if (error.name !== 'AbortError') {
+          // Fallback to copy link if share fails
+          copyToClipboard();
+        }
+      }
+    } else {
+      // Fallback to copy link
+      copyToClipboard();
+    }
+  };
+
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      // Show success message
+      setShowAddedMessage(true);
+      setTimeout(() => setShowAddedMessage(false), 3000);
+    } catch (error) {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = window.location.href;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      
+      setShowAddedMessage(true);
+      setTimeout(() => setShowAddedMessage(false), 3000);
+    }
+  };
+
+  const shareToSocial = (platform: string) => {
+    if (!product) return;
+
+    const url = encodeURIComponent(window.location.href);
+    const title = encodeURIComponent(product.name);
+    const text = encodeURIComponent(`Check out this amazing ${product.name} for ₹${product.price}!`);
+
+    let shareUrl = '';
+
+    switch (platform) {
+      case 'twitter':
+        shareUrl = `https://twitter.com/intent/tweet?text=${text}&url=${url}`;
+        break;
+      case 'facebook':
+        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}`;
+        break;
+      case 'whatsapp':
+        shareUrl = `https://wa.me/?text=${text}%20${url}`;
+        break;
+      case 'telegram':
+        shareUrl = `https://t.me/share/url?url=${url}&text=${text}`;
+        break;
+      case 'linkedin':
+        shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${url}`;
+        break;
+      default:
+        return;
+    }
+
+    window.open(shareUrl, '_blank', 'width=600,height=400');
+    setShowShareOptions(false);
   };
 
   // Loading state
@@ -339,7 +427,7 @@ const ProductDetail = () => {
                 <div className="flex flex-col sm:flex-row gap-4">
                   <Button variant="grass" size="lg" className="flex-1" onClick={handleAddToCart}>
                     <ShoppingCart className="w-5 h-5 mr-2" />
-                    Add to Cart
+                    Add to Cart ({quantity})
                   </Button>
                   <Button
                     variant={product && isInWishlist(product.id) ? "gold" : "outline"}
@@ -349,11 +437,111 @@ const ProductDetail = () => {
                     <Heart className={`w-5 h-5 mr-2 ${product && isInWishlist(product.id) ? 'fill-current' : ''}`} />
                     {product && isInWishlist(product.id) ? 'Remove from Wishlist' : 'Add to Wishlist'}
                   </Button>
-                  <Button variant="outline" size="lg">
+                  <Button variant="outline" size="lg" onClick={() => setShowShareOptions(true)}>
                     <Share2 className="w-5 h-5 mr-2" />
                     Share
                   </Button>
                 </div>
+
+                {/* Success Message */}
+                {showAddedMessage && (
+                  <div className="p-4 bg-green-50 border border-green-200 rounded-lg animate-fade-in">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                        <span className="text-white text-sm">✓</span>
+                      </div>
+                      <span className="font-minecraft text-green-800">
+                        {quantity} {quantity === 1 ? 'item' : 'items'} added to cart successfully!
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Share Options Modal */}
+                {showShareOptions && (
+                  <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-lg max-w-md w-full p-6">
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-minecraft font-bold text-gray-800">Share Product</h3>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowShareOptions(false)}
+                          className="font-minecraft"
+                        >
+                          ✕
+                        </Button>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <p className="font-minecraft text-gray-600 text-sm">
+                          Share "{product?.name}" with your friends!
+                        </p>
+                        
+                        <div className="grid grid-cols-2 gap-3">
+                          <Button
+                            variant="outline"
+                            onClick={() => shareToSocial('whatsapp')}
+                            className="font-minecraft flex items-center gap-2"
+                          >
+                            <span className="text-green-600">📱</span>
+                            WhatsApp
+                          </Button>
+                          
+                          <Button
+                            variant="outline"
+                            onClick={() => shareToSocial('telegram')}
+                            className="font-minecraft flex items-center gap-2"
+                          >
+                            <span className="text-blue-600">✈️</span>
+                            Telegram
+                          </Button>
+                          
+                          <Button
+                            variant="outline"
+                            onClick={() => shareToSocial('facebook')}
+                            className="font-minecraft flex items-center gap-2"
+                          >
+                            <span className="text-blue-600">📘</span>
+                            Facebook
+                          </Button>
+                          
+                          <Button
+                            variant="outline"
+                            onClick={() => shareToSocial('twitter')}
+                            className="font-minecraft flex items-center gap-2"
+                          >
+                            <span className="text-blue-400">🐦</span>
+                            Twitter
+                          </Button>
+                        </div>
+                        
+                        <div className="pt-3 border-t space-y-2">
+                          {/* Native Share for mobile devices */}
+                          {navigator.share && (
+                            <Button
+                              variant="default"
+                              onClick={handleShare}
+                              className="w-full font-minecraft flex items-center gap-2 bg-minecraft-diamond hover:bg-minecraft-diamond/90"
+                            >
+                              <Share2 className="w-4 h-4" />
+                              Share (Native)
+                            </Button>
+                          )}
+                          
+                          <Button
+                            variant="outline"
+                            onClick={copyToClipboard}
+                            className="w-full font-minecraft flex items-center gap-2"
+                          >
+                            <span>📋</span>
+                            Copy Link
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Features */}
