@@ -25,6 +25,10 @@ import { getProductImage } from '@/lib/image-utils';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { usePageSEO } from '@/hooks/useSEO';
 
+// Helper functions for input restrictions
+const onlyChars = (value: string) => value.replace(/[^a-zA-Z\s]/g, '');
+const onlyNumbers = (value: string) => value.replace(/[^0-9]/g, '');
+
 const Checkout: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -97,19 +101,28 @@ const Checkout: React.FC = () => {
 
     // Shipping address validation
     if (!formData.shippingName.trim()) newErrors.shippingName = 'Name is required';
+    else if (!/^[a-zA-Z\s]+$/.test(formData.shippingName.trim())) newErrors.shippingName = 'Name must contain only letters and spaces';
     if (!formData.shippingAddress.trim()) newErrors.shippingAddress = 'Address is required';
     if (!formData.shippingCity.trim()) newErrors.shippingCity = 'City is required';
+    else if (!/^[a-zA-Z\s]+$/.test(formData.shippingCity.trim())) newErrors.shippingCity = 'City must contain only letters and spaces';
     if (!formData.shippingState.trim()) newErrors.shippingState = 'State is required';
+    else if (!/^[a-zA-Z\s]+$/.test(formData.shippingState.trim())) newErrors.shippingState = 'State must contain only letters and spaces';
     if (!formData.shippingZip.trim()) newErrors.shippingZip = 'ZIP code is required';
+    else if (!/^\d+$/.test(formData.shippingZip.trim())) newErrors.shippingZip = 'ZIP code must contain only numbers';
     if (!formData.shippingPhone.trim()) newErrors.shippingPhone = 'Phone number is required';
+    else if (!/^\d+$/.test(formData.shippingPhone.trim())) newErrors.shippingPhone = 'Phone number must contain only numbers';
 
     // Billing address validation (if not same as shipping)
     if (!sameAsShipping) {
       if (!formData.billingName.trim()) newErrors.billingName = 'Name is required';
+      else if (!/^[a-zA-Z\s]+$/.test(formData.billingName.trim())) newErrors.billingName = 'Name must contain only letters and spaces';
       if (!formData.billingAddress.trim()) newErrors.billingAddress = 'Address is required';
       if (!formData.billingCity.trim()) newErrors.billingCity = 'City is required';
+      else if (!/^[a-zA-Z\s]+$/.test(formData.billingCity.trim())) newErrors.billingCity = 'City must contain only letters and spaces';
       if (!formData.billingState.trim()) newErrors.billingState = 'State is required';
+      else if (!/^[a-zA-Z\s]+$/.test(formData.billingState.trim())) newErrors.billingState = 'State must contain only letters and spaces';
       if (!formData.billingZip.trim()) newErrors.billingZip = 'ZIP code is required';
+      else if (!/^\d+$/.test(formData.billingZip.trim())) newErrors.billingZip = 'ZIP code must contain only numbers';
     }
 
     // Payment method validation
@@ -121,15 +134,50 @@ const Checkout: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleInputChange = (field: string, value: string) => {
+    let newValue = value;
+    // Restrict input based on field
+    if (
+      field === 'shippingName' ||
+      field === 'billingName' ||
+      field === 'shippingCity' ||
+      field === 'billingCity' ||
+      field === 'shippingState' ||
+      field === 'billingState'
+    ) {
+      newValue = onlyChars(value);
+    }
+    if (
+      field === 'shippingPhone' ||
+      field === 'billingPhone' ||
+      field === 'shippingZip' ||
+      field === 'billingZip'
+    ) {
+      newValue = onlyNumbers(value);
+    }
+    setFormData(prev => ({ ...prev, [field]: newValue }));
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault();
+    }
+
     if (!validateForm()) {
       return;
     }
 
     try {
       const orderData: CreateOrderData = {
+        items: cartItems.map(item => ({
+          product_id: item.id,
+          quantity: item.quantity,
+          price: item.price
+        })),
         shipping_address: {
           name: formData.shippingName,
           address: formData.shippingAddress,
@@ -139,38 +187,41 @@ const Checkout: React.FC = () => {
           country: formData.shippingCountry,
           phone: formData.shippingPhone
         },
-        billing_address: {
-          name: sameAsShipping ? formData.shippingName : formData.billingName,
-          address: sameAsShipping ? formData.shippingAddress : formData.billingAddress,
-          city: sameAsShipping ? formData.shippingCity : formData.billingCity,
-          state: sameAsShipping ? formData.shippingState : formData.billingState,
-          zip: sameAsShipping ? formData.shippingZip : formData.billingZip,
-          country: sameAsShipping ? formData.shippingCountry : formData.billingCountry
+        billing_address: sameAsShipping ? {
+          name: formData.shippingName,
+          address: formData.shippingAddress,
+          city: formData.shippingCity,
+          state: formData.shippingState,
+          zip: formData.shippingZip,
+          country: formData.shippingCountry,
+          phone: formData.shippingPhone
+        } : {
+          name: formData.billingName,
+          address: formData.billingAddress,
+          city: formData.billingCity,
+          state: formData.billingState,
+          zip: formData.billingZip,
+          country: formData.billingCountry,
+          phone: formData.shippingPhone // Use shipping phone for billing if not provided
         },
         payment_method: formData.paymentMethod,
-        notes: formData.notes
+        notes: formData.notes,
+        total_amount: totalPrice
       };
 
       const order = await createOrder(orderData);
       
-      // Redirect based on payment method
-      if (formData.paymentMethod === 'upi') {
-        navigate(`/upi-payment/${order.id}`);
-      } else {
-        // COD - go directly to confirmation (status will be 'pending' by default)
-        navigate(`/order-confirmation/${order.id}`);
+      if (order) {
+        // Navigate to appropriate page based on payment method
+        if (formData.paymentMethod === 'upi') {
+          navigate(`/upi-payment/${order.id}`);
+        } else {
+          navigate(`/order-confirmation/${order.id}`);
+        }
       }
     } catch (error) {
       console.error('Error creating order:', error);
-      alert('Failed to create order. Please try again.');
-    }
-  };
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
+      // You might want to show a toast notification here
     }
   };
 
@@ -227,6 +278,9 @@ const Checkout: React.FC = () => {
                         onChange={(e) => handleInputChange('shippingName', e.target.value)}
                         className={`font-minecraft ${errors.shippingName ? 'border-red-500' : ''}`}
                         placeholder="Enter your full name"
+                        inputMode="text"
+                        pattern="[A-Za-z\s]*"
+                        autoComplete="off"
                       />
                       {errors.shippingName && (
                         <p className="text-sm text-red-600 font-minecraft mt-1">{errors.shippingName}</p>
@@ -243,6 +297,9 @@ const Checkout: React.FC = () => {
                         onChange={(e) => handleInputChange('shippingPhone', e.target.value)}
                         className={`font-minecraft ${errors.shippingPhone ? 'border-red-500' : ''}`}
                         placeholder="Enter your phone number"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        autoComplete="off"
                       />
                       {errors.shippingPhone && (
                         <p className="text-sm text-red-600 font-minecraft mt-1">{errors.shippingPhone}</p>
@@ -277,6 +334,9 @@ const Checkout: React.FC = () => {
                         onChange={(e) => handleInputChange('shippingCity', e.target.value)}
                         className={`font-minecraft ${errors.shippingCity ? 'border-red-500' : ''}`}
                         placeholder="City"
+                        inputMode="text"
+                        pattern="[A-Za-z\s]*"
+                        autoComplete="off"
                       />
                       {errors.shippingCity && (
                         <p className="text-sm text-red-600 font-minecraft mt-1">{errors.shippingCity}</p>
@@ -293,6 +353,9 @@ const Checkout: React.FC = () => {
                         onChange={(e) => handleInputChange('shippingState', e.target.value)}
                         className={`font-minecraft ${errors.shippingState ? 'border-red-500' : ''}`}
                         placeholder="State"
+                        inputMode="text"
+                        pattern="[A-Za-z\s]*"
+                        autoComplete="off"
                       />
                       {errors.shippingState && (
                         <p className="text-sm text-red-600 font-minecraft mt-1">{errors.shippingState}</p>
@@ -309,6 +372,9 @@ const Checkout: React.FC = () => {
                         onChange={(e) => handleInputChange('shippingZip', e.target.value)}
                         className={`font-minecraft ${errors.shippingZip ? 'border-red-500' : ''}`}
                         placeholder="ZIP Code"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        autoComplete="off"
                       />
                       {errors.shippingZip && (
                         <p className="text-sm text-red-600 font-minecraft mt-1">{errors.shippingZip}</p>
@@ -351,6 +417,9 @@ const Checkout: React.FC = () => {
                             onChange={(e) => handleInputChange('billingName', e.target.value)}
                             className={`font-minecraft ${errors.billingName ? 'border-red-500' : ''}`}
                             placeholder="Enter billing name"
+                            inputMode="text"
+                            pattern="[A-Za-z\s]*"
+                            autoComplete="off"
                           />
                           {errors.billingName && (
                             <p className="text-sm text-red-600 font-minecraft mt-1">{errors.billingName}</p>
@@ -385,6 +454,9 @@ const Checkout: React.FC = () => {
                             onChange={(e) => handleInputChange('billingCity', e.target.value)}
                             className={`font-minecraft ${errors.billingCity ? 'border-red-500' : ''}`}
                             placeholder="City"
+                            inputMode="text"
+                            pattern="[A-Za-z\s]*"
+                            autoComplete="off"
                           />
                           {errors.billingCity && (
                             <p className="text-sm text-red-600 font-minecraft mt-1">{errors.billingCity}</p>
@@ -401,6 +473,9 @@ const Checkout: React.FC = () => {
                             onChange={(e) => handleInputChange('billingState', e.target.value)}
                             className={`font-minecraft ${errors.billingState ? 'border-red-500' : ''}`}
                             placeholder="State"
+                            inputMode="text"
+                            pattern="[A-Za-z\s]*"
+                            autoComplete="off"
                           />
                           {errors.billingState && (
                             <p className="text-sm text-red-600 font-minecraft mt-1">{errors.billingState}</p>
@@ -417,6 +492,9 @@ const Checkout: React.FC = () => {
                             onChange={(e) => handleInputChange('billingZip', e.target.value)}
                             className={`font-minecraft ${errors.billingZip ? 'border-red-500' : ''}`}
                             placeholder="ZIP Code"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            autoComplete="off"
                           />
                           {errors.billingZip && (
                             <p className="text-sm text-red-600 font-minecraft mt-1">{errors.billingZip}</p>

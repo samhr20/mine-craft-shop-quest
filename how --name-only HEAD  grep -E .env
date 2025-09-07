@@ -1,0 +1,136 @@
+[33mcommit 1358d61c84a325e0747318d996f2717723875db8[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: Shubham <shubhamsaini8965@gmail.com>
+Date:   Fri Sep 5 14:22:46 2025 +0530
+
+    feat: Add comprehensive e-commerce features and UI improvements
+    
+    - Add complete authentication system with login/register/forgot password
+    - Implement admin dashboard with product management, orders, and analytics
+    - Add shopping cart and wishlist functionality with database persistence
+    - Create responsive design with mobile-optimized header and navigation
+    - Add smooth animations including mobile menu slide-in from right
+    - Implement UPI payment integration and order management
+    - Add SEO optimization and image handling utilities
+    - Clean up unused UI components and improve code organization
+    - Fix CSS syntax errors and add new animation keyframes
+    - Add comprehensive documentation and SQL migration files
+
+.env
+ADD_MY_ORDERS_TO_PROFILE.md
+ADD_PRODUCT_IMAGE_TO_ORDER_ITEMS.sql
+ADD_UPI_PAYMENT_FIELDS.sql
+CLEANUP_DEMO_ORDERS.sql
+COMPLETE_RESPONSIVE_DESIGN_SUMMARY.md
+FIX_ADMIN_ORDERS_ADDRESS_ERROR.md
+FIX_OBJECT_RENDERING_ERROR.md
+FIX_ORDERS_RLS_POLICIES.sql
+FIX_ORDER_CREATION_BILLING_ADDRESS.md
+FIX_P_TAG_OBJECT_ERROR.md
+FIX_SIGN_OUT_BUTTON.md
+FIX_TOFIXED_ERROR.md
+FIX_VIEW_DETAILS_BUTTON.md
+LOGIN_REQUIRED_POPUP_IMPLEMENTATION.md
+MOBILE_HEADER_IMPROVEMENTS.md
+MOBILE_HEADER_LOGIC_FIX.md
+MOBILE_MENU_COLOR_IMPROVEMENTS.md
+MOBILE_MENU_DARK_THEME.md
+RESPONSIVE_DESIGN_IMPROVEMENTS.md
+SCROLL_TO_TOP_IMPLEMENTATION.md
+SETUP_PAYMENT_SCREENSHOTS_STORAGE.sql
+TEST_ORDERS_PAGE.md
+WISHLIST_LOGIN_POPUP_IMPLEMENTATION.md
+bun.lockb
+index.html
+package-lock.json
+package.json
+public/robots.txt
+public/sitemap.xml
+src/App.tsx
+src/components/AdminAccessGuard.tsx
+src/components/AdminRoleSelector.tsx
+src/components/Categories.tsx
+src/components/Footer.tsx
+src/components/Header.tsx
+src/components/Hero.tsx
+src/components/LoginRequiredPopup.tsx
+src/components/ProductCard.tsx
+src/components/ProductGrid.tsx
+src/components/ScrollToTop.tsx
+src/components/auth/ForgotPasswordForm.tsx
+src/components/auth/LoginForm.tsx
+src/components/auth/RegisterForm.tsx
+src/components/auth/ResetPasswordForm.tsx
+src/components/auth/UserProfile.tsx
+src/components/ui/accordion.tsx
+src/components/ui/alert-dialog.tsx
+src/components/ui/aspect-ratio.tsx
+src/components/ui/breadcrumb.tsx
+src/components/ui/calendar.tsx
+src/components/ui/carousel.tsx
+src/components/ui/chart.tsx
+src/components/ui/checkbox.tsx
+src/components/ui/collapsible.tsx
+src/components/ui/command.tsx
+src/components/ui/context-menu.tsx
+src/components/ui/dialog.tsx
+src/components/ui/drawer.tsx
+src/components/ui/dropdown-menu.tsx
+src/components/ui/form.tsx
+src/components/ui/hover-card.tsx
+src/components/ui/image-upload.tsx
+src/components/ui/input-otp.tsx
+src/components/ui/menubar.tsx
+src/components/ui/navigation-menu.tsx
+src/components/ui/pagination.tsx
+src/components/ui/popover.tsx
+src/components/ui/progress.tsx
+src/components/ui/radio-group.tsx
+src/components/ui/resizable.tsx
+src/components/ui/scroll-area.tsx
+src/components/ui/select.tsx
+src/components/ui/sheet.tsx
+src/components/ui/sidebar.tsx
+src/components/ui/skeleton.tsx
+src/components/ui/slider.tsx
+src/components/ui/switch.tsx
+src/components/ui/table.tsx
+src/components/ui/tabs.tsx
+src/components/ui/toggle-group.tsx
+src/components/ui/toggle.tsx
+src/contexts/AdminContext.tsx
+src/contexts/AuthContext.tsx
+src/contexts/CartContext.tsx
+src/contexts/OrderContext.tsx
+src/contexts/WishlistContext.tsx
+src/hooks/use-mobile.tsx
+src/hooks/use-supabase.ts
+src/hooks/useSEO.ts
+src/index.css
+src/lib/image-utils.ts
+src/lib/seo.ts
+src/lib/supabase.ts
+src/pages/About.tsx
+src/pages/AdminAddProduct.tsx
+src/pages/AdminAnalytics.tsx
+src/pages/AdminDashboard.tsx
+src/pages/AdminEditProduct.tsx
+src/pages/AdminOrders.tsx
+src/pages/AdminProducts.tsx
+src/pages/AdminUsers.tsx
+src/pages/Cart.tsx
+src/pages/Checkout.tsx
+src/pages/Contact.tsx
+src/pages/ForgotPassword.tsx
+src/pages/Index.tsx
+src/pages/Login.tsx
+src/pages/NotFound.tsx
+src/pages/OrderConfirmation.tsx
+src/pages/ProductDetail.tsx
+src/pages/Products.tsx
+src/pages/Profile.tsx
+src/pages/Register.tsx
+src/pages/ResetPassword.tsx
+src/pages/UPIPayment.tsx
+src/pages/UserOrders.tsx
+src/pages/Wishlist.tsx
+src/types/order.ts

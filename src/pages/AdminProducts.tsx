@@ -76,17 +76,24 @@ const AdminProducts: React.FC = () => {
   const loadProducts = async () => {
     try {
       setLoadingProducts(true);
+      console.log('Loading products...', { isAdmin, hasPermission: hasPermission('products') });
+      
       const { data, error } = await supabase
         .from('products')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) {
+        console.error('Error loading products:', error);
+        alert(`Error loading products: ${error.message}`);
         return;
       }
 
+      console.log('Products loaded successfully:', data?.length || 0, 'products');
       setProducts(data || []);
     } catch (error) {
+      console.error('Exception loading products:', error);
+      alert(`Exception loading products: ${error}`);
     } finally {
       setLoadingProducts(false);
     }

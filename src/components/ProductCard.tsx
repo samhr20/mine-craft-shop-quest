@@ -68,94 +68,95 @@ const ProductCard = ({
   };
 
   return (
-    <div className="bg-card border-2 border-border block-shadow hover:shadow-block-hover transition-all duration-200 p-3 sm:p-4 group card-hover rounded-xl relative overflow-hidden">
-      {/* Decorative Glow Border */}
-      <div
-        className={`absolute inset-0 pointer-events-none rounded-xl z-0 transition-all duration-300 ${
-          rarity === "legendary"
-            ? "ring-4 ring-minecraft-gold/40"
-            : rarity === "epic"
-            ? "ring-4 ring-purple-500/30"
-            : rarity === "rare"
-            ? "ring-4 ring-minecraft-diamond/30"
-            : ""
-        } group-hover:ring-8 group-hover:ring-opacity-60`}
-        aria-hidden="true"
-      ></div>
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden group border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 max-w-sm">
       {/* Image Container */}
-      <Link to={`/product/${id}`} className="block relative z-10">
-        <div className="relative mb-3 sm:mb-4 bg-muted/20 p-2 sm:p-3 md:p-4 aspect-square flex items-center justify-center overflow-hidden rounded-lg shadow-inner group-hover:bg-minecraft-grass/10 transition-all duration-200">
+      <Link to={`/product/${id}`} className="block relative">
+        <div className="relative aspect-square bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 p-3 overflow-hidden">
           <img
             src={image}
             alt={name}
-            className="pixelated max-w-full max-h-full object-contain group-hover:scale-110 transition-transform duration-200 drop-shadow-lg"
+            className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
             draggable={false}
           />
-          {isNew && (
-            <Badge className="absolute top-1 left-1 sm:top-2 sm:left-2 bg-minecraft-redstone text-primary-foreground pulse-slow text-xs shadow-md border border-white/20">
-              NEW
+          
+          {/* Badges */}
+          <div className="absolute top-2 left-2 flex flex-col gap-1">
+            {isNew && (
+              <Badge className="bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded shadow-sm">
+                NEW
+              </Badge>
+            )}
+            <Badge
+              className={`text-xs font-semibold px-2 py-1 rounded shadow-sm ${
+                rarity === "legendary"
+                  ? "bg-yellow-500 text-yellow-900"
+                  : rarity === "epic"
+                  ? "bg-purple-500 text-white"
+                  : rarity === "rare"
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-500 text-white"
+              }`}
+            >
+              {rarityLabels[rarity]}
             </Badge>
-          )}
-          <Badge
-            className={`absolute top-1 right-1 sm:top-2 sm:right-2 ${rarityColors[rarity]} capitalize glow text-xs shadow-md border border-white/20`}
-            title={rarityLabels[rarity]}
-          >
-            {rarityLabels[rarity]}
-          </Badge>
+          </div>
         </div>
       </Link>
 
       {/* Content */}
-      <div className="space-y-2 sm:space-y-3 relative z-10">
-        <div>
-          <p className="text-xs sm:text-sm text-muted-foreground font-minecraft uppercase tracking-wide mb-1">
-            {category}
-          </p>
-          <Link to={`/product/${id}`}>
-            <h3 className="font-bold text-base sm:text-lg md:text-xl font-minecraft line-clamp-2 hover:text-minecraft-grass transition-colors cursor-pointer drop-shadow-sm">
-              {name}
-            </h3>
-          </Link>
+      <div className="p-3 space-y-2">
+        {/* Category */}
+        <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+          {category}
         </div>
+
+        {/* Product Name */}
+        <Link to={`/product/${id}`}>
+          <h3 className="font-semibold text-base text-gray-900 dark:text-white line-clamp-2 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer leading-tight">
+            {name}
+          </h3>
+        </Link>
 
         {/* Rating */}
         <div className="flex items-center space-x-1">
-          {[...Array(5)].map((_, i) => (
-            <Star
-              key={i}
-              className={`w-4 h-4 sm:w-5 sm:h-5 ${
-                i < Math.floor(rating)
-                  ? "fill-minecraft-gold text-minecraft-gold drop-shadow"
-                  : "text-muted-foreground"
-              }`}
-            />
-          ))}
-          <span className="text-xs sm:text-sm text-muted-foreground font-minecraft ml-1">
+          <div className="flex items-center">
+            {[...Array(5)].map((_, i) => (
+              <Star
+                key={i}
+                className={`w-3.5 h-3.5 ${
+                  i < Math.floor(rating)
+                    ? "fill-yellow-400 text-yellow-400"
+                    : "text-gray-300 dark:text-gray-600"
+                }`}
+              />
+            ))}
+          </div>
+          <span className="text-xs text-gray-600 dark:text-gray-400 ml-1">
             {rating.toFixed(1)}
           </span>
         </div>
 
         {/* Price */}
         <div className="flex items-center space-x-2">
-          <span className="text-xl sm:text-2xl md:text-3xl font-bold text-minecraft-gold font-minecraft drop-shadow">
+          <span className="text-xl font-bold text-gray-900 dark:text-white">
             ₹{price}
           </span>
           {originalPrice && (
-            <span className="text-base sm:text-lg md:text-xl text-muted-foreground line-through font-minecraft">
+            <span className="text-base text-gray-500 dark:text-gray-400 line-through">
               ₹{originalPrice}
             </span>
           )}
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-2 mt-2">
+        <div className="flex gap-2 pt-1">
           {/* Wishlist Button */}
           <Button
-            variant={isInWishlist(id) ? "destructive" : "outline"}
-            className={`flex-1 text-xs sm:text-sm py-2 flex items-center justify-center font-minecraft transition-all duration-200 ${
+            variant="outline"
+            className={`flex-1 text-xs py-2 flex items-center justify-center transition-all duration-200 ${
               isInWishlist(id)
-                ? "border-minecraft-redstone bg-minecraft-redstone/10 text-minecraft-redstone"
-                : ""
+                ? "border-red-500 text-red-500 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30"
+                : "border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500"
             }`}
             onClick={handleWishlistToggle}
             aria-label={
@@ -163,28 +164,27 @@ const ProductCard = ({
             }
           >
             <Heart
-              className={`w-4 h-4 sm:w-5 sm:h-5 mr-2 transition-all duration-200 ${
+              className={`w-3.5 h-3.5 mr-1.5 ${
                 isInWishlist(id)
-                  ? "fill-minecraft-redstone text-minecraft-redstone"
-                  : "text-muted-foreground"
+                  ? "fill-red-500 text-red-500"
+                  : "text-gray-500 dark:text-gray-400"
               }`}
             />
             <span className="hidden sm:inline">
-              {isInWishlist(id) ? "Remove from Wishlist" : "Add to Wishlist"}
+              {isInWishlist(id) ? "Remove" : "Wishlist"}
             </span>
             <span className="sm:hidden">
-              {isInWishlist(id) ? "Remove" : "Wishlist"}
+              {isInWishlist(id) ? "Remove" : "♥"}
             </span>
           </Button>
 
           {/* Add to Cart Button */}
           <Button
-            variant="grass"
-            className="flex-1 text-xs sm:text-sm py-2 flex items-center justify-center font-minecraft shadow-md hover:scale-105 transition-all duration-200"
+            className="flex-1 text-xs py-2 flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm hover:shadow-md transition-all duration-200"
             onClick={handleAddToCart}
             aria-label="Add to Cart"
           >
-            <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+            <ShoppingCart className="w-3.5 h-3.5 mr-1.5" />
             <span className="hidden sm:inline">Add to Cart</span>
             <span className="sm:hidden">Cart</span>
           </Button>

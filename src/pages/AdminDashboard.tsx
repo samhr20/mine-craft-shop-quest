@@ -248,14 +248,7 @@ const AdminDashboard: React.FC = () => {
                 </Link>
               )}
               
-              {hasPermission('orders') && (
-                <Link to="/admin/orders">
-                  <Button variant="outline" className="w-full justify-start font-minecraft border-2 border-minecraft-diamond/50 hover:border-minecraft-diamond hover:bg-minecraft-diamond/10">
-                    <Package className="w-4 h-4 mr-2 text-minecraft-diamond" />
-                    Manage Orders
-                  </Button>
-                </Link>
-              )}
+          
               
               {hasPermission('users') && (
                 <Link to="/admin/users">
@@ -295,22 +288,30 @@ const AdminDashboard: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
+                <div>
                 <h4 className="font-minecraft font-semibold text-gray-800 mb-2">Recent Users</h4>
                 <div className="space-y-2">
-                  {stats.recentUsers.slice(0, 3).map((user) => (
-                    <div key={user.id} className="flex items-center justify-between p-2 bg-muted/20 rounded">
-                      <div>
-                        <p className="text-sm font-minecraft font-medium">
-                          {user.username || user.email?.split('@')[0] || 'User'}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(user.created_at).toLocaleDateString()}
-                        </p>
+                  {stats.recentUsers.slice(0, 3).map((user) => {
+                    // Try to get username from user_metadata, fallback to email prefix, then 'User'
+                    const username =
+                      user.user_metadata?.username ||
+                      user.user_metadata?.full_name ||
+                      user.email?.split('@')[0] ||
+                      'User';
+                    return (
+                      <div key={user.id} className="flex items-center justify-between p-2 bg-muted/20 rounded">
+                        <div>
+                          <p className="text-sm font-minecraft font-medium">
+                            {username}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(user.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <Badge variant="outline" className="text-xs">New</Badge>
                       </div>
-                      <Badge variant="outline" className="text-xs">New</Badge>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
               

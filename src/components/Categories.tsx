@@ -82,6 +82,7 @@ const Categories = () => {
 
   return (
     <section className="relative py-16 sm:py-20 md:py-24 bg-gradient-to-br from-background/80 to-muted/60 overflow-hidden">
+   
       {/* Subtle animated background shapes */}
       <div className="pointer-events-none absolute inset-0 z-0">
         <div className="absolute -top-24 -left-24 w-60 sm:w-80 md:w-96 h-60 sm:h-80 md:h-96 bg-minecraft-diamond/10 rounded-full blur-2xl md:blur-3xl animate-pulse-slow" />

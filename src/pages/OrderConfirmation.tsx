@@ -268,10 +268,10 @@ const OrderConfirmation: React.FC = () => {
                       </div>
                       <div className="text-right">
                         <p className="font-minecraft text-lg font-semibold text-gray-800">
-                          ₹{item.total_price.toFixed(2)}
+                          ₹{(item.total_price || (item.price * item.quantity)).toFixed(2)}
                         </p>
                         <p className="font-minecraft text-sm text-gray-600">
-                          ₹{item.product_price.toFixed(2)} each
+                          ₹{(item.product_price || item.price).toFixed(2)} each
                         </p>
                       </div>
                     </div>
@@ -290,11 +290,26 @@ const OrderConfirmation: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="font-minecraft text-gray-800">
-                  <p className="font-semibold text-lg">{order.customer_name}</p>
-                  <p>{order.shipping_address}</p>
-                  <p>PIN: {order.shipping_pincode}</p>
-                  <p className="mt-2 text-sm text-gray-600">Phone: {order.customer_phone}</p>
-                  <p className="text-sm text-gray-600">Email: {order.customer_email}</p>
+                  {typeof order.shipping_address === 'string' ? (
+                    // Handle string address format
+                    <>
+                      <p className="font-semibold text-lg">{order.customer_name}</p>
+                      <p>{order.shipping_address}</p>
+                      <p>PIN: {order.shipping_pincode}</p>
+                      <p className="mt-2 text-sm text-gray-600">Phone: {order.customer_phone}</p>
+                      <p className="text-sm text-gray-600">Email: {order.customer_email}</p>
+                    </>
+                  ) : (
+                    // Handle object address format
+                    <>
+                      <p className="font-semibold text-lg">{order.shipping_address.name}</p>
+                      <p>{order.shipping_address.address}</p>
+                      <p>{order.shipping_address.city}, {order.shipping_address.state} {order.shipping_address.zip}</p>
+                      <p>{order.shipping_address.country}</p>
+                      <p className="mt-2 text-sm text-gray-600">Phone: {order.shipping_address.phone || order.customer_phone}</p>
+                      <p className="text-sm text-gray-600">Email: {order.customer_email}</p>
+                    </>
+                  )}
                 </div>
               </CardContent>
             </Card>

@@ -281,6 +281,88 @@ const AdminOrders: React.FC = () => {
     }
   };
 
+  const exportOrders = () => {
+    try {
+      if (filteredOrders.length === 0) {
+        alert('No orders to export. Please adjust your filters.');
+        return;
+      }
+
+      // Prepare data for export
+      const exportData = filteredOrders.map(order => {
+        const addressText = typeof order.shipping_address === 'string' 
+          ? order.shipping_address 
+          : `${order.shipping_address?.address || ''}, ${order.shipping_address?.city || ''}, ${order.shipping_address?.state || ''} - ${order.shipping_address?.zip || ''}`;
+        
+        // Format order items
+        const itemsText = order.order_items?.map(item => 
+          `${item.product_name} (Qty: ${item.quantity}, Price: ₹${item.price})`
+        ).join('; ') || 'No items';
+        
+        return {
+          'Order Number': order.order_number,
+          'Customer Name': order.customer_name || 'N/A',
+          'Customer Email': order.customer_email || 'N/A',
+          'Customer Phone': order.customer_phone || 'N/A',
+          'Shipping Address': addressText,
+          'PIN Code': order.shipping_pincode || 'N/A',
+          'Status': order.status,
+          'Payment Method': order.payment_method.toUpperCase(),
+          'Payment Status': order.payment_status,
+          'Total Amount': `₹${order.total_amount.toFixed(2)}`,
+          'Order Date': formatDate(order.created_at),
+          'Items': itemsText,
+          'Items Count': order.order_items?.length || 0,
+          'Notes': order.notes || ''
+        };
+      });
+
+      // Convert to CSV
+      const headers = Object.keys(exportData[0] || {});
+      const csvContent = [
+        headers.join(','),
+        ...exportData.map(row => 
+          headers.map(header => {
+            const value = row[header] || '';
+            // Escape commas and quotes in CSV
+            return `"${String(value).replace(/"/g, '""')}"`;
+          }).join(',')
+        )
+      ].join('\n');
+
+      // Create and download file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      
+      // Generate filename with current date and filters
+      const now = new Date();
+      const dateStr = now.toISOString().slice(0, 10);
+      const timeStr = now.toTimeString().slice(0, 8).replace(/:/g, '-');
+      
+      let filename = `orders_export_${dateStr}_${timeStr}`;
+      if (statusFilter !== 'all') filename += `_${statusFilter}`;
+      if (paymentFilter !== 'all') filename += `_${paymentFilter}`;
+      if (searchTerm) filename += `_search`;
+      
+      link.setAttribute('download', `${filename}.csv`);
+      
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up the URL object
+      URL.revokeObjectURL(url);
+      
+      alert(`Successfully exported ${exportData.length} orders to CSV!\nFilename: ${filename}.csv`);
+    } catch (error) {
+      console.error('Export error:', error);
+      alert('Failed to export orders. Please try again.');
+    }
+  };
+
   if (loading || loadingOrders) {
     return <LoadingSpinner />;
   }
@@ -350,9 +432,13 @@ const AdminOrders: React.FC = () => {
                 </select>
 
                 {/* Export Button */}
-                <Button className="bg-minecraft-diamond hover:bg-minecraft-diamond/90 text-white font-minecraft">
+                <Button 
+                  onClick={exportOrders}
+                  className="bg-minecraft-diamond hover:bg-minecraft-diamond/90 text-white font-minecraft"
+                  disabled={filteredOrders.length === 0}
+                >
                   <Download className="w-4 h-4 mr-2" />
-                  Export
+                  Export ({filteredOrders.length})
                 </Button>
               </div>
             </CardContent>

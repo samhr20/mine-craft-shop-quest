@@ -1,24 +1,24 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import { useCart } from './CartContext';
 import { supabase } from '../lib/supabase';
 import { Order, CreateOrderData, OrderContextType, OrderStatus } from '../types/order';
 
-const OrderContext = createContext<OrderContextType | undefined>(undefined);
+const OptimizedOrderContext = createContext<OrderContextType | undefined>(undefined);
 
-export const useOrder = () => {
-  const context = useContext(OrderContext);
+export const useOptimizedOrder = () => {
+  const context = useContext(OptimizedOrderContext);
   if (context === undefined) {
-    throw new Error('useOrder must be used within an OrderProvider');
+    throw new Error('useOptimizedOrder must be used within an OptimizedOrderProvider');
   }
   return context;
 };
 
-interface OrderProviderProps {
+interface OptimizedOrderProviderProps {
   children: React.ReactNode;
 }
 
-export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
+export const OptimizedOrderProvider: React.FC<OptimizedOrderProviderProps> = ({ children }) => {
   const { user } = useAuth();
   const { items: cartItems, clearCart } = useCart();
   const [orders, setOrders] = useState<Order[]>([]);
@@ -35,20 +35,33 @@ export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
     }
   }, [user]);
 
-  const loadUserOrders = async () => {
+  const loadUserOrders = useCallback(async () => {
     if (!user) return;
 
     try {
       setLoading(true);
+      
+      // Optimized query - only fetch essential data first
       const { data, error } = await supabase
         .from('orders')
         .select(`
-          *,
-          order_items (*),
-          order_status_history (*)
+          id,
+          order_number,
+          status,
+          total_amount,
+          payment_method,
+          created_at,
+          order_items (
+            id,
+            product_name,
+            quantity,
+            price,
+            total_price
+          )
         `)
         .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(20); // Limit to recent 20 orders
 
       if (error) {
         throw error;
@@ -60,7 +73,7 @@ export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   const createOrder = async (orderData: CreateOrderData): Promise<Order> => {
     if (!user) {
@@ -92,7 +105,7 @@ export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
         initialPaymentStatus = 'pending'; // Payment on delivery
       }
 
-      // Create order
+      // Create order with optimized data structure
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
@@ -100,7 +113,7 @@ export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
           order_number: orderNumber,
           total_amount: totalAmount,
           shipping_address: orderData.shipping_address,
-          billing_address: orderData.billing_address || orderData.shipping_address, // Use shipping address as fallback
+          billing_address: orderData.billing_address || orderData.shipping_address,
           shipping_pincode: orderData.shipping_pincode,
           customer_name: orderData.customer_name,
           customer_phone: orderData.customer_phone,
@@ -114,21 +127,19 @@ export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
         .single();
 
       if (orderError) {
-        // More detailed error information
         const errorMessage = `Order creation failed: ${orderError.message} (Code: ${orderError.code})`;
         throw new Error(errorMessage);
       }
 
-
-      // Create order items
+      // Create order items with batch insert
       const orderItems = cartItems.map(item => ({
         order_id: order.id,
-        product_id: item.product_id, // Use product_id, not cart item id
+        product_id: item.product_id,
         product_name: item.name,
         price: item.price,
-        product_price: item.price, // Alias for price (used by AdminOrders)
-        total_price: item.price * item.quantity, // Calculate total for this line item
-        product_image: item.image, // Store the product image URL
+        product_price: item.price,
+        total_price: item.price * item.quantity,
+        product_image: item.image,
         quantity: item.quantity
       }));
 
@@ -149,6 +160,9 @@ export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
       // Set current order
       setCurrentOrder(order);
 
+      // Refresh orders list
+      await loadUserOrders();
+
       return order;
     } catch (error) {
       console.error('Error creating order:', error);
@@ -162,6 +176,13 @@ export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
     if (!user) return null;
 
     try {
+      // Check if order is already in our local state
+      const localOrder = orders.find(order => order.id === orderId);
+      if (localOrder) {
+        return localOrder;
+      }
+
+      // Fetch full order details if not in local state
       const { data, error } = await supabase
         .from('orders')
         .select(`
@@ -174,10 +195,6 @@ export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
         .single();
 
       if (error) {
-        // More detailed error logging
-        const errorMessage = `Error getting order: ${error.message} (Code: ${error.code})`;
-        console.error(errorMessage);
-        
         if (error.code === 'PGRST116') {
           return null; // Order not found
         }
@@ -198,12 +215,23 @@ export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
       const { data, error } = await supabase
         .from('orders')
         .select(`
-          *,
-          order_items (*),
-          order_status_history (*)
+          id,
+          order_number,
+          status,
+          total_amount,
+          payment_method,
+          created_at,
+          order_items (
+            id,
+            product_name,
+            quantity,
+            price,
+            total_price
+          )
         `)
         .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(50); // Limit to 50 most recent orders
 
       if (error) {
         throw error;
@@ -234,10 +262,16 @@ export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
         .eq('id', orderId);
 
       if (error) {
-        // More detailed error information
         const errorMessage = `Order status update failed: ${error.message} (Code: ${error.code})`;
         throw new Error(errorMessage);
       }
+
+      // Update local state
+      setOrders(prev => prev.map(order => 
+        order.id === orderId 
+          ? { ...order, status, notes, updated_at: new Date().toISOString() }
+          : order
+      ));
     } catch (error) {
       console.error('Error updating order status:', error);
       throw error;
@@ -248,20 +282,20 @@ export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
     await updateOrderStatus(orderId, 'cancelled', reason);
   };
 
-  // Helper function to generate order number
+  // Optimized order number generation
   const generateOrderNumber = async (): Promise<string> => {
     const today = new Date();
     const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '');
     
     // Generate a unique order number with timestamp and random component
-    const timestamp = Date.now().toString().slice(-6); // Last 6 digits of timestamp
+    const timestamp = Date.now().toString().slice(-6);
     const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
     
     let orderNumber = `${dateStr}-${timestamp}-${random}`;
     
     // Check if this order number already exists (very unlikely but safety check)
     let attempts = 0;
-    while (attempts < 5) {
+    while (attempts < 3) { // Reduced attempts for better performance
       const { data: existingOrder } = await supabase
         .from('orders')
         .select('id')
@@ -293,8 +327,8 @@ export const OrderProvider: React.FC<OrderProviderProps> = ({ children }) => {
   };
 
   return (
-    <OrderContext.Provider value={value}>
+    <OptimizedOrderContext.Provider value={value}>
       {children}
-    </OrderContext.Provider>
+    </OptimizedOrderContext.Provider>
   );
 };

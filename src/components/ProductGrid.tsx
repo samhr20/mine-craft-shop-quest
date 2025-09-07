@@ -3,6 +3,7 @@ import { useProducts } from "@/hooks/use-supabase";
 import LoadingSpinner from "./LoadingSpinner";
 import { getProductImage } from "@/lib/image-utils";
 import { useNavigate } from "react-router-dom";
+import heroBanner from "@/assets/minecraft-hero-banner.jpg"; // Make sure this import exists
 
 const ProductGrid = () => {
   const { products, loading, error } = useProducts();
@@ -39,13 +40,22 @@ const ProductGrid = () => {
 
   if (loading) {
     return (
-      <section className="py-16 bg-background">
-        <div className="container mx-auto px-4">
+      <section className="py-16 bg-background relative overflow-hidden">
+        {/* Background overlay */}
+        <div
+          className="absolute inset-0 bg-cover bg-center animate-hero-bg-zoom z-0"
+          style={{
+            backgroundImage: `linear-gradient(rgba(20,24,31,0.7),rgba(20,24,31,0.7)), url(${heroBanner})`,
+            filter: "blur(2px) brightness(0.8)",
+          }}
+          aria-hidden="true"
+        ></div>
+        <div className="container mx-auto px-4 relative z-10">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-foreground mb-4 font-minecraft">
+            <h2 className="text-5xl text-white font-bold text-foreground mb-4 font-minecraft">
               Featured Products
             </h2>
-            <p className="text-xl text-muted-foreground font-minecraft">
+            <p className="text-xl text-slate-200/90 font-minecraft">
               Loading amazing items for your Minecraft adventure...
             </p>
           </div>
@@ -59,13 +69,24 @@ const ProductGrid = () => {
 
   if (error) {
     return (
-      <section className="py-16 bg-background">
-        <div className="container mx-auto px-4">
+      <section className="py-16 bg-background relative overflow-hidden">
+        {/* Background overlay */}
+        <div
+          className="absolute inset-0 bg-cover bg-center animate-hero-bg-zoom z-0"
+          style={{
+            backgroundImage: `linear-gradient(rgba(20,24,31,0.7),rgba(20,24,31,0.7)), url(${heroBanner})`,
+            filter: "blur(2px) brightness(0.8)",
+          }}
+          aria-hidden="true"
+        ></div>
+        <div className="container mx-auto px-4 relative z-10">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-foreground mb-4 font-minecraft">
+
+
+            <h2 className="text-5xl text-white font-bold text-foreground mb-4 font-minecraft">
               Featured Products
             </h2>
-            <p className="text-xl text-muted-foreground font-minecraft">
+            <p className="text-xl text-slate-200/90  font-minecraft">
               Error loading products: {error}
             </p>
           </div>
@@ -75,20 +96,29 @@ const ProductGrid = () => {
   }
 
   return (
-    <section className="py-16 bg-background">
-      <div className="container mx-auto px-4">
+    <section className="py-16 bg-background relative overflow-hidden">
+      {/* Background overlay */}
+      <div
+        className="absolute inset-0 bg-cover bg-center animate-hero-bg-zoom z-0"
+        style={{
+          backgroundImage: `linear-gradient(rgba(20,24,31,0.7),rgba(20,24,31,0.7)), url(${heroBanner})`,
+          filter: "blur(2px) brightness(0.8)",
+        }}
+        aria-hidden="true"
+      ></div>
+      <div className="container mx-auto px-4 relative z-10">
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-foreground mb-4 font-minecraft">
+          <h2 className="text-5xl font-bold text-white text-foreground mb-4 font-minecraft">
             Featured Products
           </h2>
-          <p className="text-xl text-muted-foreground font-minecraft">
+          <p className="text-xl text-slate-200/90  font-minecraft">
             Discover the best items for your Minecraft adventure
           </p>
         </div>
 
         {transformedProducts.length > 0 ? (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {transformedProducts.map((product) => (
                 <ProductCard key={product.id} {...product} />
               ))}

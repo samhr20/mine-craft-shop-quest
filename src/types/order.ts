@@ -17,6 +17,7 @@ export interface BillingAddress {
   state: string;
   zip: string;
   country: string;
+  phone?: string; // Phone number for billing address
 }
 
 export type OrderStatus = 'pending' | 'pending_payment_verification' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'returned' | 'cancelled';
@@ -29,6 +30,8 @@ export interface OrderItem {
   product_id: string;
   product_name: string;
   price: number;
+  product_price?: number; // Alias for price (used by AdminOrders)
+  total_price?: number; // Calculated total (price * quantity)
   product_image?: string;
   quantity: number;
   created_at: string;
@@ -64,14 +67,20 @@ export interface OrderStatusHistory {
 }
 
 export interface CreateOrderData {
+  items: Array<{
+    product_id: string;
+    quantity: number;
+    price: number;
+  }>;
   shipping_address: string | ShippingAddress;
   billing_address?: string | BillingAddress;
-  shipping_pincode: string;
-  customer_name: string;
-  customer_phone: string;
-  customer_email: string;
+  shipping_pincode?: string;
+  customer_name?: string;
+  customer_phone?: string;
+  customer_email?: string;
   payment_method: PaymentMethod;
   notes?: string;
+  total_amount: number;
 }
 
 export interface OrderSummary {
